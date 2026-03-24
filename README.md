@@ -52,7 +52,20 @@
 
 ## 快速开始
 
-### 1分钟快速体验
+### 1分钟快速体验（一键安装）
+
+```bash
+# 一键安装（推荐）
+bash <(curl -sL https://raw.githubusercontent.com/duhu2000/vendor-assessment-qcc/main/install_qcc_mcp.sh)
+
+# 配置API Key（从 https://mcp.qcc.com 申请）
+export QCC_MCP_API_KEY="your_api_key_here"
+
+# 开始评估
+/vendor-assessment-qcc 华为技术有限公司
+```
+
+### 手动安装
 
 ```bash
 # 1. 克隆仓库
@@ -61,11 +74,10 @@ git clone https://github.com/duhu2000/vendor-assessment-qcc.git
 # 2. 进入目录
 cd vendor-assessment-qcc
 
-# 3. 安装到Claude Code
-mkdir -p ~/.claude/skills/vendor-assessment-qcc
-cp SKILL.qcc-enhanced.md ~/.claude/skills/vendor-assessment-qcc/SKILL.md
+# 3. 运行安装脚本
+bash install_qcc_mcp.sh
 
-# 4. 配置API Key（从 https://mcp.qcc.com 申请）
+# 4. 配置API Key
 export QCC_MCP_API_KEY="your_api_key_here"
 
 # 5. 开始评估
@@ -235,6 +247,7 @@ health = connector.assess_business_health("供应商名称")
 vendor-assessment-qcc/
 ├── README.md                           # 本文件
 ├── LICENSE                             # Apache 2.0 许可证
+├── install_qcc_mcp.sh                  # 一键安装脚本 ⭐
 │
 ├── SKILL.md                            # 当前使用的Skill文件
 ├── SKILL.original.md                   # 原作者Panaversity版本（6维度）
