@@ -40,10 +40,15 @@ echo -e "${BLUE}Detected platform: $PLATFORM${NC}"
 echo ""
 
 # Check installation mode
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# When running via 'bash <(curl ...)', BASH_SOURCE may not be reliable
+# We detect curl mode by checking if we can find the script files
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo '')"
 INSTALL_MODE="local"
+SOURCE_DIR=""
 
-if [[ "$SCRIPT_DIR" == "/tmp"* ]] || [[ "$0" == "bash"* ]]; then
+# Try to detect if we're in curl mode
+# In curl mode, the script is piped to bash, so we won't find local files
+if [ -z "$SCRIPT_DIR" ] || [ ! -f "${SCRIPT_DIR}/SKILL.qcc-enhanced.md" ]; then
     INSTALL_MODE="curl"
     echo -e "${BLUE}Installation mode: curl (downloading from GitHub)${NC}"
 
