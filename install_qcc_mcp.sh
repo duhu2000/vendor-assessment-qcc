@@ -40,15 +40,14 @@ echo -e "${BLUE}Detected platform: $PLATFORM${NC}"
 echo ""
 
 # Check installation mode
-# When running via 'bash <(curl ...)', BASH_SOURCE may not be reliable
-# We detect curl mode by checking if we can find the script files
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || echo '')"
+# When running via 'bash <(curl ...)', BASH_SOURCE[0] returns something like /dev/fd/63
+# In normal execution, it's the actual script path
+SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 INSTALL_MODE="local"
 SOURCE_DIR=""
 
-# Try to detect if we're in curl mode
-# In curl mode, the script is piped to bash, so we won't find local files
-if [ -z "$SCRIPT_DIR" ] || [ ! -f "${SCRIPT_DIR}/SKILL.qcc-enhanced.md" ]; then
+# Detect curl mode: if BASH_SOURCE contains /dev/fd/ or doesn't exist as a real file
+if [[ "$SCRIPT_SOURCE" == /dev/fd/* ]] || [[ "$SCRIPT_SOURCE" == /proc/*/fd/* ]] || [ ! -f "$SCRIPT_SOURCE" ]; then
     INSTALL_MODE="curl"
     echo -e "${BLUE}Installation mode: curl (downloading from GitHub)${NC}"
 
@@ -68,7 +67,7 @@ if [ -z "$SCRIPT_DIR" ] || [ ! -f "${SCRIPT_DIR}/SKILL.qcc-enhanced.md" ]; then
     SOURCE_DIR="$TEMP_DIR"
 else
     echo -e "${BLUE}Installation mode: local${NC}"
-    SOURCE_DIR="$SCRIPT_DIR"
+    SOURCE_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 fi
 
 # Check for QCC MCP API Key
