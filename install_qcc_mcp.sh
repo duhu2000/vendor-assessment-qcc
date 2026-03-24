@@ -117,7 +117,56 @@ fi
 
 echo ""
 echo "=========================================="
-echo "  Step 1: Installing Skill"
+echo "  Step 1: Installing MCP Configuration"
+echo "=========================================="
+
+# Install .mcp.json configuration
+echo ""
+echo -e "${BLUE}Installing MCP server configuration...${NC}"
+MCP_CONFIG_DEST="$CLAUDE_DIR/.mcp.json"
+
+if [ -f "$MCP_CONFIG_DEST" ]; then
+    echo -e "${YELLOW}  Existing .mcp.json found, backing up...${NC}"
+    cp "$MCP_CONFIG_DEST" "${MCP_CONFIG_DEST}.backup.$(date +%Y%m%d%H%M%S)"
+fi
+
+# Create MCP config with API key placeholder
+cat > "$MCP_CONFIG_DEST" << 'MCPJSONEOF'
+{
+  "mcpServers": {
+    "qcc-company": {
+      "url": "https://mcp.qcc.com/data/company/stream",
+      "headers": {
+        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
+      }
+    },
+    "qcc-risk": {
+      "url": "https://mcp.qcc.com/data/risk/stream",
+      "headers": {
+        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
+      }
+    },
+    "qcc-ipr": {
+      "url": "https://mcp.qcc.com/data/ipr/stream",
+      "headers": {
+        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
+      }
+    },
+    "qcc-operation": {
+      "url": "https://mcp.qcc.com/data/operation/stream",
+      "headers": {
+        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
+      }
+    }
+  }
+}
+MCPJSONEOF
+
+echo -e "${GREEN}  ✓ MCP configuration installed to: $MCP_CONFIG_DEST${NC}"
+
+echo ""
+echo "=========================================="
+echo "  Step 2: Installing Skill"
 echo "=========================================="
 
 # Define destination
@@ -173,6 +222,15 @@ echo "=========================================="
 echo "  Step 3: Verifying Installation"
 echo "=========================================="
 
+# Check MCP config
+echo ""
+echo -e "${BLUE}Checking MCP configuration...${NC}"
+if [ -f "$MCP_CONFIG_DEST" ]; then
+    echo -e "${GREEN}  ✓ MCP configuration file installed${NC}"
+else
+    echo -e "${RED}  ✗ MCP configuration file not found${NC}"
+fi
+
 # Check Python
 if ! command -v python3 &> /dev/null; then
     echo -e "${YELLOW}⚠️  Python3 not found. Please install Python 3.9+${NC}"
@@ -221,10 +279,27 @@ fi
 
 echo ""
 echo "=========================================="
+echo "  ⚠️  IMPORTANT: Post-Installation Steps"
+echo "=========================================="
+echo ""
+echo -e "${YELLOW}You MUST restart Claude Code to load the MCP configuration!${NC}"
+echo ""
+echo "Step 1: Completely exit Claude Code"
+echo "Step 2: Ensure QCC_MCP_API_KEY is set:"
+echo "       export QCC_MCP_API_KEY='your_api_key_here'"
+echo "Step 3: Restart Claude Code"
+echo "Step 4: Verify MCP servers are loaded:"
+echo "       You should see 'qcc-company', 'qcc-risk', etc. in available tools"
+echo ""
+echo "=========================================="
 echo "  Quick Start"
 echo "=========================================="
 echo ""
-echo "1. Restart Claude Code (if running)"
+echo "After restarting Claude Code, use these commands:"
+echo ""
+echo "1. Verify MCP tools are available:"
+echo "   Check if Claude shows available MCP tools from qcc-company, qcc-risk, etc."
+echo ""
 echo "2. Use the skill:"
 echo ""
 echo "   # 评估中国供应商（自动启用QCC MCP）"

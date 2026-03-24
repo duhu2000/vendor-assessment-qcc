@@ -22,6 +22,41 @@ metadata:
   mcp-integrations: "QCC MCP (Enterprise/Risk/IP/Business), ERP, Web Search"
 ---
 
+## MCP 配置要求
+
+**⚠️ 重要：使用本SKILL前，必须确保企查查MCP服务器已配置**
+
+### 检查清单：
+1. ✅ `~/.claude/.mcp.json` 文件存在且配置正确
+2. ✅ `QCC_MCP_API_KEY` 环境变量已设置
+3. ✅ Claude Code 已重启加载MCP配置
+
+### 配置方法：
+```bash
+# 1. 创建 MCP 配置文件
+cat > ~/.claude/.mcp.json << 'EOF'
+{
+  "mcpServers": {
+    "qcc-company": {
+      "url": "https://mcp.qcc.com/data/company/stream",
+      "headers": { "Authorization": "Bearer ${QCC_MCP_API_KEY}" }
+    },
+    "qcc-risk": {
+      "url": "https://mcp.qcc.com/data/risk/stream",
+      "headers": { "Authorization": "Bearer ${QCC_MCP_API_KEY}" }
+    }
+  }
+}
+EOF
+
+# 2. 设置 API Key
+export QCC_MCP_API_KEY="your_api_key_here"
+
+# 3. 重启 Claude Code
+```
+
+---
+
 ## UNIVERSAL RULES (apply to every vendor task)
 
 - NEVER classify a sole-source supplier as low risk based on spend alone --
@@ -34,6 +69,7 @@ metadata:
   observations without actions are not acceptable
 - **FOR CHINESE SUPPLIERS: ALWAYS use QCC MCP as primary data source** --
   Companies House and Creditsafe have NO coverage for Chinese entities
+- **NEVER use web search for Chinese suppliers** -- always use qcc-company, qcc-risk MCP tools
 - **NEVER fabricate Chinese enterprise data** -- if QCC MCP unavailable,
   explicitly flag as "financial visibility: NONE" and recommend manual verification
 

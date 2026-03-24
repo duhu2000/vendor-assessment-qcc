@@ -55,13 +55,19 @@
 ### 1分钟快速体验（一键安装）
 
 ```bash
-# 一键安装（推荐）
+# 1. 一键安装（自动配置 MCP）
 bash <(curl -sL https://raw.githubusercontent.com/duhu2000/vendor-assessment-qcc/main/install_qcc_mcp.sh)
 
-# 配置API Key（从 https://mcp.qcc.com 申请）
+# 2. 配置API Key（从 https://mcp.qcc.com 申请）
 export QCC_MCP_API_KEY="your_api_key_here"
 
-# 开始评估
+# 3. ⚠️ 重要：重启 Claude Code 以加载 MCP 配置
+# 完全退出 Claude Code，然后重新启动
+
+# 4. 验证 MCP 配置（重启后）
+# 你应该能看到可用的 MCP 工具：qcc-company, qcc-risk, qcc-ipr, qcc-operation
+
+# 5. 开始评估
 /vendor-assessment-qcc 华为技术有限公司
 ```
 
@@ -80,7 +86,10 @@ bash install_qcc_mcp.sh
 # 4. 配置API Key
 export QCC_MCP_API_KEY="your_api_key_here"
 
-# 5. 开始评估
+# 5. ⚠️ 重启 Claude Code（关键步骤）
+# 完全退出后重新启动
+
+# 6. 开始评估
 /vendor-assessment-qcc 华为技术有限公司
 ```
 
