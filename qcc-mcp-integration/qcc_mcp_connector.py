@@ -112,21 +112,21 @@ class BusinessHealthAssessment:
 
 class QccMcpConnector:
     """
-    企查查MCP连接器 - 供应链专用
+    企查查MCP连接器 - 供应链专用 (2024最新协议)
 
     集成四大Server：
-    - 企业基座：工商信息、股东信息、主要人员
-    - 风控大脑：司法风险、经营风险、舆情风险
-    - 知产引擎：知识产权、专利商标
-    - 经营罗盘：财务数据、经营指标
+    - qcc_company: 企业基座 (工商信息、股东信息、主要人员、变更记录、分支机构)
+    - qcc_risk: 风控大脑 (司法风险、经营风险、税务风险、环保处罚)
+    - qcc_ipr: 知产引擎 (知识产权、专利商标、软件著作权)
+    - qcc_operation: 经营罗盘 (资质证书、行政许可、招投标、信用评级、抽查检查)
     """
 
-    # MCP Server端点配置
+    # MCP Server端点配置 (2024最新定义)
     MCP_SERVERS = {
-        "enterprise": "https://api.qcc.com/mcp/enterprise",  # 企业基座
-        "risk": "https://api.qcc.com/mcp/risk",              # 风控大脑
-        "ip": "https://api.qcc.com/mcp/ip",                  # 知产引擎
-        "business": "https://api.qcc.com/mcp/business",      # 经营罗盘
+        "qcc_company": "https://mcp.qcc.com/data/company/stream",    # 企业基座
+        "qcc_risk": "https://mcp.qcc.com/data/risk/stream",          # 风控大脑
+        "qcc_ipr": "https://mcp.qcc.com/data/ipr/stream",            # 知产引擎
+        "qcc_operation": "https://mcp.qcc.com/data/operation/stream", # 经营罗盘
     }
 
     # 18类风险映射到SKILL维度的配置
@@ -176,12 +176,12 @@ class QccMcpConnector:
 
     def _call_mcp(self, server: str, tool: str, params: Dict) -> Dict:
         """
-        调用MCP Server
+        调用MCP Server (2024最新协议)
 
         Args:
-            server: Server名称 (enterprise/risk/ip/business)
+            server: Server名称 (qcc_company/qcc_risk/qcc_ipr/qcc_operation)
             tool: 工具名称
-            params: 请求参数
+            params: 请求参数 (必须使用 searchKey 作为企业标识)
 
         Returns:
             MCP响应数据
@@ -190,10 +190,14 @@ class QccMcpConnector:
         if not base_url:
             raise ValueError(f"Unknown MCP server: {server}")
 
-        url = f"{base_url}/{tool}"
+        # 2024 MCP协议：通过请求体中的 tool 和 inputSchema 调用具体工具
+        request_body = {
+            "tool": tool,
+            "inputSchema": params
+        }
 
         try:
-            response = self.session.post(url, json=params, timeout=30)
+            response = self.session.post(base_url, json=request_body, timeout=30)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -213,9 +217,9 @@ class QccMcpConnector:
         Returns:
             VendorInfo: 核验后的供应商信息
         """
-        # 调用企业基座 - 企业基本信息查询
-        result = self._call_mcp("enterprise", "company_base_info", {
-            "company_name": vendor_name
+        # 调用企业基座 - 企业登记信息查询 (verify_company_accuracy 用于实体锚定)
+        result = self._call_mcp("qcc_company", "get_company_registration_info", {
+            "searchKey": vendor_name
         })
 
         if result.get("status") != "success" or not result.get("data"):
@@ -250,9 +254,9 @@ class QccMcpConnector:
         """
         risks = []
 
-        # 1. 失信信息查询
-        result = self._call_mcp("risk", "dishonest_info", {
-            "company_name": vendor_name
+        # 1. 失信信息查询 (get_dishonest_info)
+        result = self._call_mcp("qcc_risk", "get_dishonest_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -265,9 +269,9 @@ class QccMcpConnector:
                     source="中国执行信息公开网"
                 ))
 
-        # 2. 被执行人查询
-        result = self._call_mcp("risk", "zhixing_info", {
-            "company_name": vendor_name
+        # 2. 被执行人查询 (get_judgment_debtor_info)
+        result = self._call_mcp("qcc_risk", "get_judgment_debtor_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -280,9 +284,9 @@ class QccMcpConnector:
                     source="中国执行信息公开网"
                 ))
 
-        # 3. 限制高消费查询
-        result = self._call_mcp("risk", "limit_high_consumption", {
-            "company_name": vendor_name
+        # 3. 限制高消费查询 (get_high_consumption_restriction)
+        result = self._call_mcp("qcc_risk", "get_high_consumption_restriction", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -295,9 +299,9 @@ class QccMcpConnector:
                     source="中国执行信息公开网"
                 ))
 
-        # 4. 终本案件查询
-        result = self._call_mcp("risk", "zhongben_case", {
-            "company_name": vendor_name
+        # 4. 终本案件查询 (get_terminated_cases)
+        result = self._call_mcp("qcc_risk", "get_terminated_cases", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -310,9 +314,9 @@ class QccMcpConnector:
                     source="中国执行信息公开网"
                 ))
 
-        # 5. 破产重整查询
-        result = self._call_mcp("risk", "bankruptcy_info", {
-            "company_name": vendor_name
+        # 5. 破产重整查询 (get_bankruptcy_reorganization)
+        result = self._call_mcp("qcc_risk", "get_bankruptcy_reorganization", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -335,9 +339,9 @@ class QccMcpConnector:
         """
         risks = []
 
-        # 1. 经营异常查询
-        result = self._call_mcp("enterprise", "abnormal_info", {
-            "company_name": vendor_name
+        # 1. 经营异常查询 (get_business_exception)
+        result = self._call_mcp("qcc_risk", "get_business_exception", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -350,9 +354,9 @@ class QccMcpConnector:
                     source="国家企业信用信息公示系统"
                 ))
 
-        # 2. 严重违法查询
-        result = self._call_mcp("enterprise", "serious_violation", {
-            "company_name": vendor_name
+        # 2. 严重违法查询 (get_serious_violation)
+        result = self._call_mcp("qcc_risk", "get_serious_violation", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -365,9 +369,9 @@ class QccMcpConnector:
                     source="国家企业信用信息公示系统"
                 ))
 
-        # 3. 行政处罚查询
-        result = self._call_mcp("risk", "admin_penalty", {
-            "company_name": vendor_name
+        # 3. 行政处罚查询 (get_administrative_penalty)
+        result = self._call_mcp("qcc_risk", "get_administrative_penalty", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -380,9 +384,9 @@ class QccMcpConnector:
                     source=item.get("office_name", "行政处罚机关")
                 ))
 
-        # 4. 环保处罚查询
-        result = self._call_mcp("risk", "env_penalty", {
-            "company_name": vendor_name
+        # 4. 环保处罚查询 (get_environmental_penalty)
+        result = self._call_mcp("qcc_risk", "get_environmental_penalty", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -405,9 +409,9 @@ class QccMcpConnector:
         """
         risks = []
 
-        # 1. 股权冻结查询
-        result = self._call_mcp("enterprise", "equity_freeze", {
-            "company_name": vendor_name
+        # 1. 股权冻结查询 (get_equity_freeze)
+        result = self._call_mcp("qcc_risk", "get_equity_freeze", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -420,9 +424,9 @@ class QccMcpConnector:
                     source="国家企业信用信息公示系统"
                 ))
 
-        # 2. 股权出质查询
-        result = self._call_mcp("enterprise", "equity_pledge", {
-            "company_name": vendor_name
+        # 2. 股权出质查询 (get_equity_pledge_info)
+        result = self._call_mcp("qcc_risk", "get_equity_pledge_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -435,9 +439,9 @@ class QccMcpConnector:
                     source="国家企业信用信息公示系统"
                 ))
 
-        # 3. 动产抵押查询
-        result = self._call_mcp("enterprise", "chattel_mortgage", {
-            "company_name": vendor_name
+        # 3. 动产抵押查询 (get_chattel_mortgage_info)
+        result = self._call_mcp("qcc_risk", "get_chattel_mortgage_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -460,9 +464,9 @@ class QccMcpConnector:
         """
         risks = []
 
-        # 1. 欠税公告查询
-        result = self._call_mcp("risk", "tax_arrears", {
-            "company_name": vendor_name
+        # 1. 欠税公告查询 (get_tax_arrears_notice)
+        result = self._call_mcp("qcc_risk", "get_tax_arrears_notice", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -475,9 +479,9 @@ class QccMcpConnector:
                     source="国家税务总局"
                 ))
 
-        # 2. 税务非正常户查询
-        result = self._call_mcp("risk", "tax_abnormal", {
-            "company_name": vendor_name
+        # 2. 税务非正常户查询 (get_tax_abnormal)
+        result = self._call_mcp("qcc_risk", "get_tax_abnormal", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -490,9 +494,9 @@ class QccMcpConnector:
                     source="国家税务总局"
                 ))
 
-        # 3. 税收违法查询
-        result = self._call_mcp("risk", "tax_violation", {
-            "company_name": vendor_name
+        # 3. 税收违法查询 (get_tax_violation)
+        result = self._call_mcp("qcc_risk", "get_tax_violation", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             for item in result["data"]:
@@ -513,8 +517,9 @@ class QccMcpConnector:
 
         用于财务风险评估维度
         """
-        result = self._call_mcp("business", "financial_indicators", {
-            "company_name": vendor_name
+        # 财务指标通过 annual_reports 获取 (get_annual_reports)
+        result = self._call_mcp("qcc_company", "get_annual_reports", {
+            "searchKey": vendor_name
         })
 
         if result.get("status") == "success" and result.get("data"):
@@ -552,7 +557,7 @@ class QccMcpConnector:
 
         # 2. 收集18类核心风险
         all_risks = []
-        data_sources = ["企查查MCP-企业基座", "企查查MCP-风控大脑"]
+        data_sources = ["企查查MCP-qcc_company", "企查查MCP-qcc_risk"]
 
         # 司法风险
         judicial_risks = self.check_judicial_risks(vendor_name)
@@ -589,7 +594,7 @@ class QccMcpConnector:
         health_assessment = self.assess_business_health(vendor_name)
         business_health_risk = self._calculate_business_health_risk(health_assessment)
 
-        data_sources.extend(["企查查MCP-经营罗盘", "企查查MCP-知产引擎"])
+        data_sources.extend(["企查查MCP-qcc_operation", "企查查MCP-qcc_ipr"])
 
         # 5. 确定整体风险等级 (包含供应链维度)
         overall_risk = self._calculate_overall_risk([
@@ -622,9 +627,9 @@ class QccMcpConnector:
         """
         assessment = CapacityAssessment()
 
-        # 1. 查询资质证书
-        result = self._call_mcp("business", "get_qualifications", {
-            "company_name": vendor_name
+        # 1. 查询资质证书 (get_qualifications)
+        result = self._call_mcp("qcc_operation", "get_qualifications", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             qualifications = result["data"]
@@ -651,9 +656,9 @@ class QccMcpConnector:
                     except:
                         pass
 
-        # 2. 查询行政许可
-        result = self._call_mcp("business", "get_administrative_license", {
-            "company_name": vendor_name
+        # 2. 查询行政许可 (get_administrative_license)
+        result = self._call_mcp("qcc_operation", "get_administrative_license", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             licenses = result["data"]
@@ -681,9 +686,9 @@ class QccMcpConnector:
         """
         assessment = StabilityAssessment()
 
-        # 1. 查询变更记录
-        result = self._call_mcp("enterprise", "get_change_records", {
-            "company_name": vendor_name
+        # 1. 查询变更记录 (get_change_records)
+        result = self._call_mcp("qcc_company", "get_change_records", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             changes = result["data"]
@@ -712,9 +717,9 @@ class QccMcpConnector:
                 except:
                     pass
 
-        # 2. 查询分支机构
-        result = self._call_mcp("enterprise", "get_branches", {
-            "company_name": vendor_name
+        # 2. 查询分支机构 (get_branches)
+        result = self._call_mcp("qcc_company", "get_branches", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             assessment.branch_count = len(result["data"])
@@ -740,18 +745,17 @@ class QccMcpConnector:
         """
         assessment = BusinessHealthAssessment()
 
-        # 1. 查询官方信用评价
-        result = self._call_mcp("business", "get_credit_evaluation", {
-            "company_name": vendor_name
+        # 1. 查询官方信用评价 (get_credit_evaluation)
+        result = self._call_mcp("qcc_operation", "get_credit_evaluation", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             assessment.official_credit_rating = result["data"].get("rating", "未评级")
             assessment.tax_credit_rating = result["data"].get("tax_rating", "未评级")
 
-        # 2. 查询招投标信息
-        result = self._call_mcp("business", "get_bidding_info", {
-            "company_name": vendor_name,
-            "limit": 50
+        # 2. 查询招投标信息 (get_bidding_info)
+        result = self._call_mcp("qcc_operation", "get_bidding_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             bids = result["data"]
@@ -764,9 +768,9 @@ class QccMcpConnector:
             else:
                 assessment.bidding_trend = "低迷"
 
-        # 3. 查询抽查检查记录
-        result = self._call_mcp("business", "get_spot_check_info", {
-            "company_name": vendor_name
+        # 3. 查询抽查检查记录 (get_spot_check_info)
+        result = self._call_mcp("qcc_operation", "get_spot_check_info", {
+            "searchKey": vendor_name
         })
         if result.get("status") == "success" and result.get("data"):
             checks = result["data"]
