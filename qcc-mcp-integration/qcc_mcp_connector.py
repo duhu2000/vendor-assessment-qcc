@@ -123,10 +123,10 @@ class QccMcpConnector:
 
     # MCP Server端点配置 (2024最新定义)
     MCP_SERVERS = {
-        "qcc_company": "https://mcp.qcc.com/data/company/stream",    # 企业基座
-        "qcc_risk": "https://mcp.qcc.com/data/risk/stream",          # 风控大脑
-        "qcc_ipr": "https://mcp.qcc.com/data/ipr/stream",            # 知产引擎
-        "qcc_operation": "https://mcp.qcc.com/data/operation/stream", # 经营罗盘
+        "qcc_company": "https://agent.qcc.com/mcp/company/stream",    # 企业基座
+        "qcc_risk": "https://agent.qcc.com/mcp/risk/stream",          # 风控大脑
+        "qcc_ipr": "https://agent.qcc.com/mcp/ipr/stream",            # 知产引擎
+        "qcc_operation": "https://agent.qcc.com/mcp/operation/stream", # 经营罗盘
     }
 
     # 18类风险映射到SKILL维度的配置

@@ -1,56 +1,24 @@
 {
   "mcpServers": {
     "qcc-company": {
-      "url": "https://mcp.qcc.com/data/company/stream",
+      "url": "https://agent.qcc.com/mcp/company/stream",
       "headers": {
-        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
-      },
-      "description": "企查查企业基座 - 提供工商登记、股东信息、变更记录等企业基础信息服务"
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
     },
     "qcc-risk": {
-      "url": "https://mcp.qcc.com/data/risk/stream",
+      "url": "https://agent.qcc.com/mcp/risk/stream",
       "headers": {
-        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
-      },
-      "description": "企查查风控大脑 - 提供失信、被执行、限高、破产等18类风险信息"
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
     },
     "qcc-ipr": {
-      "url": "https://mcp.qcc.com/data/ipr/stream",
-      "headers": {
-        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
-      },
-      "description": "企查查知产引擎 - 提供专利、商标、软件著作权等知识产权信息"
+      "url": "https://agent.qcc.com/mcp/ipr/stream",
+      "headers": { "Authorization": "Bearer YOUR_API_KEY" }
     },
     "qcc-operation": {
-      "url": "https://mcp.qcc.com/data/operation/stream",
-      "headers": {
-        "Authorization": "Bearer ${QCC_MCP_API_KEY}"
-      },
-      "description": "企查查经营罗盘 - 提供招投标、资质证书、信用评级等经营信息"
+      "url": "https://agent.qcc.com/mcp/operation/stream",
+      "headers": { "Authorization": "Bearer YOUR_API_KEY" }
     }
-  },
-  "skills": {
-    "vendor-assessment-qcc": {
-      "description": "供应商风险评估Skill（企查查MCP增强版）- 支持中国企业供应商的六维度风险评估",
-      "commands": [
-        {
-          "name": "/vendor-assessment-qcc",
-          "description": "执行供应商风险评估",
-          "parameters": {
-            "supplier_name": "供应商名称"
-          }
-        }
-      ],
-      "required_mcp_servers": ["qcc-company", "qcc-risk", "qcc-ipr", "qcc-operation"]
-    }
-  },
-  "configuration": {
-    "required_env_vars": ["QCC_MCP_API_KEY"],
-    "setup_instructions": [
-      "1. 从 https://mcp.qcc.com 申请API Key",
-      "2. 设置环境变量: export QCC_MCP_API_KEY='your_api_key_here'",
-      "3. 重启Claude Code以加载MCP配置",
-      "4. 使用 /vendor-assessment-qcc 供应商名称 开始评估"
-    ]
   }
 }
