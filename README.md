@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Claude](https://img.shields.io/badge/Claude%20Code-Compatible-purple.svg)](https://claude.ai)
-[![MCP](https://img.shields.io/badge/MCP-QCC%20企查查-orange.svg)](https://mcp.qcc.com)
+[![MCP](https://img.shields.io/badge/MCP-QCC%20企查查-orange.svg)](https://agent.qcc.com)
 [![Original](https://img.shields.io/badge/Original-Panaversity-blue.svg)](https://github.com/panaversity/agentfactory-business-plugins)
 
 > **⚠️ 重要说明：本项目基于 [Panaversity Supply Chain Plugin](https://github.com/panaversity/agentfactory-business-plugins) 增强开发**
@@ -58,7 +58,7 @@
 # 1. 一键安装（自动配置 MCP）
 bash <(curl -sL https://raw.githubusercontent.com/duhu2000/vendor-assessment-qcc/main/install_qcc_mcp.sh)
 
-# 2. 配置API Key（从 https://mcp.qcc.com 申请）
+# 2. 配置API Key（从 https://agent.qcc.com 申请）
 export QCC_MCP_API_KEY="your_api_key_here"
 
 # 3. ⚠️ 重要：重启 Claude Code 以加载 MCP 配置
@@ -101,13 +101,13 @@ export QCC_MCP_API_KEY="your_api_key_here"
 
 - **操作系统**: macOS / Linux / Windows (WSL)
 - **Claude Code**: 最新版本
-- **网络**: 可访问 https://mcp.qcc.com
+- **网络**: 可访问 https://agent.qcc.com
 
 ### 安装步骤
 
 #### 步骤1: 申请企查查MCP Key
 
-1. 访问 [企查查MCP官网](https://mcp.qcc.com)
+1. 访问 [企查查MCP官网](https://agent.qcc.com)
 2. 注册企业账号
 3. 申请MCP服务授权
 4. 获取API Key
@@ -299,7 +299,7 @@ vendor-assessment-qcc/
 
 ### 联系方式
 
-- **企查查MCP官网**: [https://mcp.qcc.com](https://mcp.qcc.com)
+- **企查查MCP官网**: [https://agent.qcc.com](https://agent.qcc.com)
 - **Email**: duhu@qcc.com
 
 ---
@@ -307,7 +307,7 @@ vendor-assessment-qcc/
 ## 致谢
 
 - 原版作者 [Panaversity](https://github.com/panaversity/agentfactory-business-plugins) 的优秀供应商评估框架
-- [企查查MCP](https://mcp.qcc.com) - Agent-Native企业数据基座
+- [企查查MCP](https://agent.qcc.com) - Agent-Native企业数据基座
 - [Anthropic](https://anthropic.com) 的 Claude Code
 
 ---
