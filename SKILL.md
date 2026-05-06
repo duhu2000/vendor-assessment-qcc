@@ -1,226 +1,292 @@
 ---
-name: vendor-assessment
+name: vendor-assessment-qcc
 description: >
-  Classifies, scores, and evaluates vendors. Activate for: vendor assessment,
-  classify vendor, vendor classification, Kraljic matrix, vendor tier,
-  bottleneck vendor, strategic vendor, vendor review, supplier assessment,
-  vendor onboarding, new vendor approval, vendor audit, annual vendor review,
-  vendor scorecard, supplier evaluation, vendor qualification, approve vendor,
-  vendor due diligence, vendor health check, vendor performance review,
-  bottleneck supplier, vendor exit, risk profile of a vendor.
-  USE THIS when the task is to CLASSIFY a vendor into a category (Strategic /
-  Tactical / Commodity / Bottleneck), SCORE them across dimensions, or EVALUATE
-  a vendor for onboarding/approval/exit.
-  NOT for: ongoing risk signal monitoring or risk alerts (use supplier-risk),
-  invoice reconciliation (use invoice-reconciliation), carrier performance
-  review (use logistics-brief), spend category analysis (use spend-analysis).
+  供应商分级、评分与评估 SKILL · 企查查 MCP V2.0 增强版。
+  对供应商进行 Kraljic 矩阵分级、6 维度评分与综合评估，适用于供应商准入审批、年度复核、退出决策等场景。
+  触发关键词：供应商评估 / 供应商分级 / Kraljic 矩阵 / 供应商等级 / 瓶颈供应商 / 战略供应商 / 供应商复核 / 供应商准入 / 新供应商审批 / 供应商审计 / 年度复核 / 供应商记分卡 / 供应商资质 / 供应商尽调 / 供应商健康度 / 供应商绩效复核 / 供应商退出 / 供应商风险画像。
+  适用场景：当任务是要把供应商**分级**到（战略 / 策略 / 商品 / 瓶颈）某一类、对其做**多维度评分**、或对供应商**准入 / 复核 / 退出**做评估时使用本 SKILL。
+  不适用场景：持续风险信号监控（请用 supplier-risk-qcc）/ 发票核对（请用 invoice-reconciliation）/ 物流绩效复核（请用 logistics-brief）/ 品类支出分析（请用 spend-analysis）。
+
 license: Apache-2.0
 metadata:
-  author: Panaversity
-  version: "1.0"
+  author: Supply Chain QCC Enhanced (MCP V2.0 本土化版)
+  version: "2.0"
   plugin-commands: "/vendor-assess"
-  mcp-integrations: "ERP, Web Search, Companies House, Creditsafe, QMS"
+  mcp-integrations: "qcc-company, qcc-risk, qcc-operation, qcc-history, qcc-executive"
+  industry: "供应链管理 - 采购准入与年度复核"
 ---
 
-## UNIVERSAL RULES (apply to every vendor task)
+## 📖 QCC MCP 术语对照表（强制工具映射）
 
-- NEVER classify a sole-source supplier as low risk based on spend alone --
-  always assess operational dependency separately from spend volume
-- NEVER accept a vendor risk assessment that contains fabricated financial
-  data -- label all estimates and flag where primary data is unavailable
-- NEVER recommend a vendor exit without a qualified alternative identified
-  or an explicit "no alternative -- managed risk" decision documented
-- ALWAYS include specific recommended actions with deadlines in every output --
-  observations without actions are not acceptable
+> **使用约定**：本表列出 SKILL 内业务简写与企查查 MCP 工具的精确映射。AI 执行本 SKILL 时遇到下表"业务简写"列的词汇，**必须调用对应"MCP 工具"列**，禁止使用 web search 或自由文本推测替代。完整规范见 [QCC-MCP-TERMINOLOGY.md](../../QCC-MCP-TERMINOLOGY.md)。
 
-## MANDATORY OUTPUT HEADER
+| 业务简写 | 规范全名 | 企查查 MCP 工具 |
+| --- | --- | --- |
+| 失信 | 失信被执行人 | `mcp__qcc-risk__get_dishonest_info` |
+| 被执行 | 被执行人 / 判决债务人 | `mcp__qcc-risk__get_judgment_debtor_info` |
+| 限高 | 限制高消费 | `mcp__qcc-risk__get_high_consumption_restriction` |
+| 限出境 / 限境 | 限制出境 | `mcp__qcc-risk__get_exit_restriction` |
+| 终本 | 终结本次执行案件 | `mcp__qcc-risk__get_terminated_cases` |
+| 破产 / 重整 | 破产重整 | `mcp__qcc-risk__get_bankruptcy_reorganization` |
+| 经营异常 | 经营异常 | `mcp__qcc-risk__get_business_exception` |
+| 严重违法 | 严重违法失信 | `mcp__qcc-risk__get_serious_violation` |
+| 行政处罚 / 重大处罚 | 行政处罚 | `mcp__qcc-risk__get_administrative_penalty` |
+| 股权冻结 | 股权冻结 | `mcp__qcc-risk__get_equity_freeze` |
+| 股权出质 | 股权出质 | `mcp__qcc-risk__get_equity_pledge_info` |
+| 欠税 | 欠税公告 | `mcp__qcc-risk__get_tax_arrears_notice` |
+| 税务异常 / 税务违法 | 税务异常 / 税收违法 | `mcp__qcc-risk__get_tax_abnormal` / `mcp__qcc-risk__get_tax_violation` |
+| 受益所有人 / UBO | 受益所有人 | `mcp__qcc-company__get_beneficial_owners` |
+| 实控人 / 实际控制人 | 实际控制人 | `mcp__qcc-company__get_actual_controller` |
+| 主要人员 / 董监高 | 主要人员 | `mcp__qcc-company__get_key_personnel` |
+| 抽查检查 / 双随机 | 双随机抽查 | `mcp__qcc-operation__get_random_check` |
+| 资质 / 资质证书 | 资质证书 | `mcp__qcc-operation__get_qualifications` |
+| 信用评级 | 信用评级 | `mcp__qcc-operation__get_credit_evaluation` |
+| 吊销 | （登记状态字段判断）| 调 `mcp__qcc-company__get_company_registration_info` 取"登记状态" |
+| 资不抵债 | （资产负债率字段判断）| 调 `mcp__qcc-company__get_financial_data` 判断负债率 > 100% |
 
-Every output must begin with:
+---
 
-```
-TASK:          [e.g. Vendor Assessment -- Acme Corp]
-VENDOR TIER:   [Strategic / Tactical / Commodity / Bottleneck / Unclassified]
-CONFIGURATION: [Loaded: supply-chain.local.md / Not configured]
-DATA SOURCES:  [ERP / Web / Manual input]
-```
+## 通用规则（所有供应商任务必须遵守）
 
-## ASSESSMENT WORKFLOW
+- **绝不**仅凭采购金额低就把单一来源供应商划分为低风险——必须把"运营依赖度"与"采购金额"分开评估
+- **绝不**接受含有编造财务数据的供应商风险评估——所有估算必须明确标注，原始数据缺失之处必须显性提示
+- **绝不**在没有合格替代供应商或没有显性记录"无替代 - 已纳管风险"决议的情况下建议供应商退出
+- **必须**在每份输出中包含具体的推荐行动项 + 截止日期——只有观察而无行动建议不可接受
 
-### Phase 1: Vendor Classification (Kraljic Matrix)
+## 强制输出报告头
 
-Before any assessment, classify the vendor:
-
-| Question                    | Strategic     | Tactical    | Commodity     | Bottleneck    |
-| --------------------------- | ------------- | ----------- | ------------- | ------------- |
-| Are alternatives available? | No / very few | Yes -- 2-3  | Many          | No / very few |
-| Annual spend?               | High          | Medium      | Any           | Low-Medium    |
-| Impact if vendor fails?     | Critical      | Significant | Manageable    | Critical      |
-| Relationship depth?         | Deep / long   | Established | Transactional | Variable      |
-
-STRATEGIC (Tier 1): High spend AND high dependency. Single-source or near-sole-source. Review: quarterly + event-triggered.
-TACTICAL (Tier 2): Significant spend. Multiple alternatives available. Review: bi-annual + event-triggered.
-COMMODITY (Tier 3): Standard goods/services. Easy to switch. Review: annual.
-BOTTLENECK (Tier 4): LOW spend but HIGH dependency. MOST DANGEROUS -- most often neglected. Review: quarterly despite low spend.
-
-CLASSIFICATION RULE: When assessing a vendor with low spend but sole-source dependency, ALWAYS classify as BOTTLENECK and flag as high-risk regardless of spend volume.
-
-CLASSIFICATION DETERMINES:
-
-- Assessment depth (number of dimensions assessed)
-- Review frequency
-- Risk threshold stringency
-- Escalation level
-
-### Phase 2: Six-Dimension Assessment
-
-DIMENSION 1: COMMERCIAL
-Contract status:
-
-- Active contract: Yes/No; expiry date; auto-renewal clause?
-- Notice period for non-renewal: documented?
-- Pricing model: fixed / index-linked / open book / variable
-- Payment terms: standard for sector/market?
-- Volume commitments: minimum order quantities; penalty clauses?
-- IP ownership: critical for manufactured-to-spec components
-
-Flags:
-RED: No contract for spend > configured threshold
-RED: Auto-renewal without documented notice window reminder
-AMBER: Fixed price contract on commodity category (index exposure)
-AMBER: Volume commitment with penalty below minimum forecast volume
-
-DIMENSION 2: OPERATIONAL
-Metrics from ERP (last 12 months):
-
-- On-time delivery rate (OTD): calculate from GR dates vs. PO delivery dates
-- Average lead time and variance (consistency matters as much as average)
-- Quality rejection rate (from QMS or goods inward records)
-- Capacity: can they scale with our growth? (ask directly)
-- Business continuity: single site or multiple?
-
-Flags:
-RED: OTD < configured threshold for tier (e.g. <90% for Strategic)
-RED: Quality rejection > configured threshold (e.g. >2% for direct materials)
-AMBER: OTD declining trend (even if above threshold -- trajectory matters)
-AMBER: Single production site with no documented BCP
-
-DIMENSION 3: FINANCIAL
-For publicly listed vendors:
-
-- Revenue trend (last 3 years): growing / stable / declining
-- Profitability trend: EBIT margin trajectory
-- Debt to equity ratio: deteriorating?
-- Days Sales Outstanding (DSO): lengthening = cash pressure
-- Analyst commentary (if listed): any concerns raised?
-
-For private vendors:
-
-- Companies House / SECP / equivalent filings (annual accounts)
-- Credit rating from Creditsafe / D&B / Experian
-- Request audited accounts for Strategic and Bottleneck vendors annually
-- Trade references from other customers (for new vendors)
-
-Flags:
-RED: Restructuring, administration, or insolvency proceedings
-RED: Zero financial visibility on Strategic or Bottleneck vendor
-AMBER: Revenue decline >15% year-on-year
-AMBER: Credit rating downgrade
-AMBER: EBIT margin below 3% (marginal viability risk)
-
-DIMENSION 4: COMPLIANCE
-Certifications required (configure by category in local settings):
-
-- Quality: ISO 9001 / sector-specific (IATF 16949 for automotive, etc.)
-- Environmental: ISO 14001 (if required by your policy)
-- Data: GDPR compliance + DPA for any data-sharing arrangement
-- Modern Slavery Act statement (UK vendors > GBP 36M turnover)
-- Sanctions screening: verified against OFAC, EU, UK HMT lists
-- Trade compliance: export licences, import documentation
-- ESG/ethical sourcing: modern slavery, conflict minerals (sector-specific)
-
-Flags:
-RED: Active sanctions match -- immediate escalation; stop all activity
-RED: Required certification expired with no renewal in progress
-AMBER: Certification expiring within 90 days -- request renewal evidence
-AMBER: No modern slavery statement (UK statutory requirement above threshold)
-
-DIMENSION 5: STRATEGIC
-
-- Dependency: sole-source / dual-source / approved panel
-- Switching timeline: how long to qualify and onboard an alternative?
-- Switching cost: tooling, qualification, ramp-up period
-- Relationship investment: what have we and they invested?
-- Innovation: are they bringing improvements and ideas?
-- Strategic alignment: do their long-term plans align with ours?
-
-Flags:
-RED: Sole-source with switching timeline >6 months and no backup qualified
-AMBER: No alternative vendor qualified or in qualification for critical category
-AMBER: Vendor has indicated desire to exit the relationship or market segment
-
-DIMENSION 6: GEOPOLITICAL / SUSTAINABILITY
-
-- Country risk: political stability; trade restriction risk; sanctions exposure
-- Currency risk: contract currency vs. payment currency
-- Supply chain depth: do we know Tier 2 sub-suppliers for critical components?
-- Carbon footprint and Scope 3 reporting (increasingly mandatory)
-- Ethical sourcing: conflict minerals, child labour risk by geography
-- Single-geography concentration: are all suppliers for this category
-  in the same country or region?
-
-Flags:
-RED: Vendor in sanctioned country or subject to active export restrictions
-AMBER: All suppliers for a critical category in a single high-risk geography
-AMBER: No Tier 2 supplier mapping for Strategic vendors
-
-## ASSESSMENT OUTPUT FORMAT
+每份输出必须以下列格式开头：
 
 ```
-VENDOR ASSESSMENT: [Vendor Name]
+任务：          [例：供应商评估 -- 企查查科技股份有限公司]
+供应商等级：    [战略 / 策略 / 商品 / 瓶颈 / 未分级]
+配置：          [已加载：supply-chain.local.md / 未配置]
+数据来源：      [企查查 MCP / 内部 ERP / 人工补录]
+```
+
+## 评估工作流
+
+### 阶段一：供应商分级（Kraljic 矩阵）
+
+任何评估开始之前，必须先完成供应商分级：
+
+| 判断问题 | 战略 | 策略 | 商品 | 瓶颈 |
+| --- | --- | --- | --- | --- |
+| 是否有替代供应商？ | 无 / 极少 | 有 -- 2-3 家 | 大量 | 无 / 极少 |
+| 年度采购金额？ | 高 | 中 | 任意 | 低 - 中 |
+| 供应商失败的影响？ | 致命 | 显著 | 可控 | 致命 |
+| 合作关系深度？ | 深度 / 长期 | 已建立 | 交易型 | 不固定 |
+
+**战略型（一档）**：高金额 + 高依赖度。单一来源或近似单一来源。复核频率：**季度 + 事件触发**。
+**策略型（二档）**：金额显著。有多个替代选项。复核频率：**半年 + 事件触发**。
+**商品型（三档）**：标准货物或服务。易于切换。复核频率：**年度**。
+**瓶颈型（四档）**：**采购金额低但依赖度高**。最危险——最容易被忽略。即便金额低，复核频率也必须为**季度**。
+
+> **分级铁律**：当供应商采购金额低、但属于单一来源依赖时，**必须分类为"瓶颈型"，且无论采购金额大小都标记为高风险**。
+
+分级决定：
+
+- 评估深度（评估的维度数量）
+- 复核频率
+- 风险阈值的严苛程度
+- 升级处置等级
+
+### 阶段二：6 维度评估
+
+#### 维度 1：商务（COMMERCIAL）
+
+合同状态：
+
+- 有效合同：是 / 否；到期日；是否含自动续约条款？
+- 不续约通知期：是否有书面记录？
+- 定价模式：固定 / 指数挂钩 / 成本透明（open book）/ 浮动
+- 付款条款：是否符合行业 / 市场惯例？
+- 数量承诺：最低订单量；违约金条款？
+- 知识产权归属：对定制化生产组件至关重要
+
+风险标记：
+
+- 🔴 红色：采购金额超过配置阈值但无合同
+- 🔴 红色：自动续约条款但无文书化的通知期提醒
+- 🟡 黄色：商品类（commodity）品类签固定价合同（指数风险敞口）
+- 🟡 黄色：数量承诺 + 违约金，但承诺量低于最低预测量
+
+#### 维度 2：运营（OPERATIONAL）
+
+ERP 系统取数（最近 12 个月）：
+
+- 准时交付率（OTD）：用收货日期 vs PO 交付日期计算
+- 平均交付周期与方差（一致性与平均值同等重要）
+- 质量退货率（来自 QMS 或来料检验记录）
+- 产能：能否随我方业务增长扩产？（直接询问对方）
+- 业务连续性：单一站点还是多站点布局？
+
+风险标记：
+
+- 🔴 红色：OTD 低于该等级配置阈值（如战略型 < 90%）
+- 🔴 红色：质量退货率超过配置阈值（如直接物料 > 2%）
+- 🟡 黄色：OTD 呈下降趋势（即便仍在阈值之上——趋势比绝对值更重要）
+- 🟡 黄色：单一生产站点且无 BCP（业务连续性计划）文书
+
+#### 维度 3：财务（FINANCIAL）
+
+**对上市供应商**：
+
+- 营收趋势（最近 3 年）：增长 / 平稳 / 下滑
+- 盈利能力趋势：EBIT 利润率走向
+- 资产负债率：是否在恶化？
+- 应收账款周转天数（DSO）：拉长 = 现金压力
+- 分析师评论（若已上市）：是否有担忧？
+
+**对非上市供应商（中国本土化）**：
+
+- **企查查工商基础信息**（调 `mcp__qcc-company__get_company_registration_info`）：注册资本、成立年限、登记状态
+- **企查查年度报告**（调 `mcp__qcc-company__get_annual_reports`）：从业人数、纳税总额、营业收入区间
+- **企查查财务数据**（调 `mcp__qcc-company__get_financial_data`）：主要财务指标（仅上市企业 / 发债企业可获取）
+- **政府监管信用评级**（调 `mcp__qcc-operation__get_credit_evaluation`）：纳税信用 A/B/C/D 级
+- 对战略型与瓶颈型供应商，**必须每年**索取审计后财务报表
+- 对新供应商，需提供其他客户的合作背书证明
+
+风险标记：
+
+- 🔴 红色：进入重整、托管或破产程序（调 `mcp__qcc-risk__get_bankruptcy_reorganization` 核查）
+- 🔴 红色：战略型或瓶颈型供应商财务可视度为零
+- 🟡 黄色：营收同比下滑超过 15%
+- 🟡 黄色：信用评级被下调
+- 🟡 黄色：EBIT 利润率低于 3%（边际经营风险）
+
+#### 维度 4：合规（COMPLIANCE）
+
+按品类配置必备资质（在本地配置文件中按行业定义）：
+
+- **质量体系**：ISO 9001 / 行业专项（汽车业的 IATF 16949 等）
+- **环境体系**：ISO 14001（如本公司政策要求）
+- **数据合规**：GDPR 合规 + 任何数据共享场景的 DPA（数据处理协议）
+- **现代奴役制声明**：英国营业额 > 3,600 万英镑供应商法定要求
+- **制裁筛查**：核实未命中 OFAC / 欧盟 / 英国 HMT 制裁清单
+- **贸易合规**：出口许可证、进口报关文件
+- **ESG / 道德采购**：现代奴役、冲突矿产（行业专项）
+
+**中国本土化合规检查（强制项）**：
+
+- **失信被执行人**（调 `mcp__qcc-risk__get_dishonest_info`）：当前态命中即触发红色标记
+- **被执行人**（调 `mcp__qcc-risk__get_judgment_debtor_info`）：当前态命中即触发红色标记
+- **限制高消费**（调 `mcp__qcc-risk__get_high_consumption_restriction`）：当前态命中即触发红色标记
+- **经营异常**（调 `mcp__qcc-risk__get_business_exception`）：当前态命中即触发黄色标记
+- **严重违法失信**（调 `mcp__qcc-risk__get_serious_violation`）：命中即直接拒绝准入
+- **行政处罚**（调 `mcp__qcc-risk__get_administrative_penalty`）：根据严重度下调评分 1-2 级
+- **资质证书**（调 `mcp__qcc-operation__get_qualifications`）：核查有效期与等级
+- **登记状态**（调 `mcp__qcc-company__get_company_registration_info` 取"登记状态"）：含"吊销 / 注销 / 异常"即拒绝准入
+
+风险标记：
+
+- 🔴 红色：制裁清单或失信清单命中——立即升级处置；停止一切合作活动
+- 🔴 红色：必备资质证书已过期且无在审续证记录
+- 🟡 黄色：资质证书在 90 天内即将到期——索取续证证明材料
+- 🟡 黄色：英国法定门槛以上但未发布现代奴役制声明（针对涉外供应商）
+
+#### 维度 5：战略（STRATEGIC）
+
+- 依赖度：单一来源 / 双源 / 已认证供应商池
+- 切换周期：合格化与上线一家替代供应商需要多长时间？
+- 切换成本：模具、合格化、爬坡周期
+- 关系投入：双方各自投入了什么？
+- 创新能力：他们是否带来改进与创意？
+- 战略协同：他们的长期规划与我方是否一致？
+
+**实控人风险扫描（中国本土化新增）**：
+
+- **实控人** / **法定代表人**（调 `mcp__qcc-company__get_actual_controller`）：识别真实控制人
+- **个人失信**（调 `mcp__qcc-executive__get_executive_dishonest`）：实控人个人当前失信即触发红色
+- **个人限高**（调 `mcp__qcc-executive__get_executive_high_consumption_ban`）：当前限高触发红色
+- **关联企业网络**（调 `mcp__qcc-executive__get_executive_controlled_companies`）：识别实控人控制的其他企业是否存在风险
+
+风险标记：
+
+- 🔴 红色：单一来源 + 切换周期 > 6 个月 + 无备选已合格化
+- 🟡 黄色：关键品类无替代供应商或无在合格化的备选
+- 🟡 黄色：供应商表达过退出合作或退出市场细分的意向
+
+#### 维度 6：地缘 / 可持续性（GEOPOLITICAL / SUSTAINABILITY）
+
+- 国别风险：政治稳定性；贸易限制风险；制裁敞口
+- 汇率风险：合同币种 vs 实际付款币种
+- 供应链层级：关键组件是否能追溯到二级（Tier 2）供应商？
+- 碳足迹与范围 3 排放披露（要求趋强）
+- 道德采购：冲突矿产、按地理风险评估的童工风险
+- 单一地理集中度：某一关键品类的所有供应商是否集中在同一国家或地区？
+
+风险标记：
+
+- 🔴 红色：供应商位于受制裁国家或受到现行出口限制
+- 🟡 黄色：关键品类的所有供应商集中在同一高风险地区
+- 🟡 黄色：战略型供应商无 Tier 2 供应链映射
+
+## 评估输出格式
+
+```
+供应商评估报告：[供应商名称]
 ================================================================
-Classification:  [STRATEGIC / TACTICAL / COMMODITY / BOTTLENECK]
-Tier:            [1 / 2 / 3 / 4]
-Rationale:       [Brief justification for classification]
+供应商分级：     [战略 / 策略 / 商品 / 瓶颈]
+等级档：         [一 / 二 / 三 / 四]
+分级依据：       [简要说明分级理由]
 
--- COMMERCIAL ----------------------------------------------------
-[Findings and flags per item above]
+-- 商务 ----------------------------------------------------
+[按上述各项列出发现 + 风险标记]
 
--- OPERATIONAL ---------------------------------------------------
-OTD (12M):     [X]%   Threshold: [X]%   Status: [PASS / WARNING / FAIL]
-Lead time avg: [X] days  Variance: +/-[X] days
-Quality rej:   [X]%   Threshold: [X]%   Status: [PASS / WARNING / FAIL]
+-- 运营 ----------------------------------------------------
+OTD（12个月）：    [X]%   阈值：[X]%   状态：[通过 / 警告 / 不通过]
+平均交付周期：    [X] 天   方差：±[X] 天
+质量退货率：      [X]%   阈值：[X]%   状态：[通过 / 警告 / 不通过]
 
--- FINANCIAL -----------------------------------------------------
-[Findings and flags]
+-- 财务 ----------------------------------------------------
+[发现 + 风险标记 + 企查查工商 / 年报 / 信用评级数据]
 
--- COMPLIANCE ----------------------------------------------------
-[Certifications status; sanctions clear/flag; DPA status]
+-- 合规 ----------------------------------------------------
+[资质证书状态；制裁筛查清白 / 命中；DPA 状态；中国本土化失信 / 经营异常 / 行政处罚 扫描结果]
 
--- STRATEGIC -----------------------------------------------------
-[Dependency level; switching timeline; backup vendor status]
+-- 战略 ----------------------------------------------------
+[依赖度；切换周期；备用供应商状态；实控人风险扫描结果]
 
--- GEOPOLITICAL / SUSTAINABILITY ---------------------------------
-[Country risk; currency; Tier 2 visibility; ESG]
+-- 地缘 / 可持续性 -----------------------------------------
+[国别风险；汇率；Tier 2 可视度；ESG]
 
-RISK SUMMARY
-RED CRITICAL: [list]
-AMBER MODERATE: [list]
-GREEN LOW: [list]
+风险综合
+🔴 红色（致命）：[列出]
+🟡 黄色（中等）：[列出]
+🟢 绿色（低风险）：[列出]
 
-RECOMMENDED ACTIONS -- RANKED BY URGENCY
-[N]. [Priority] [Action] -- [Owner] -- by [Date]
+推荐行动项 -- 按紧迫度排序
+[N]. [优先级] [具体行动] -- [责任人] -- 截止 [日期]
 ================================================================
 ```
 
-## NEVER DO THESE
+## 严禁事项
 
-- NEVER classify a sole-source supplier as low-risk because spend is low
-- NEVER complete a financial assessment with fabricated data --
-  if data unavailable: flag explicitly as "financial visibility: NONE"
-  and recommend requesting audited accounts
-- NEVER conduct a sanctions screening check manually --
-  always use an authoritative list (OFAC, EU, UK HMT)
-- NEVER close an assessment without a recommended action list
-- NEVER skip the Tier 2 visibility check for Strategic vendors
+- **绝不**因为采购金额低就把单一来源供应商划分为低风险
+- **绝不**用编造的数据完成财务评估——若数据不可获得，必须显性标注"财务可视度：无"，并建议索取审计报告
+- **绝不**手动核查制裁清单——必须使用权威清单（OFAC、欧盟、英国 HMT）+ 中国本土的失信被执行人 / 严重违法失信清单
+- **绝不**关闭评估而不输出推荐行动项清单
+- **绝不**对战略型供应商跳过 Tier 2 可视度核查
 
-ALL OUTPUTS REQUIRE REVIEW BY A QUALIFIED PROFESSIONAL BEFORE USE IN BUSINESS DECISIONS.
+## 中国本土化扩展数据源
+
+| 数据源 | 工具 | 用途 |
+| --- | --- | --- |
+| 企查查工商基础 | `mcp__qcc-company__get_company_registration_info` | 注册资本、成立日期、登记状态 |
+| 企查查年报 | `mcp__qcc-company__get_annual_reports` | 从业人数、营业收入区间 |
+| 企查查信用评级 | `mcp__qcc-operation__get_credit_evaluation` | 纳税信用 A/B/C/D |
+| 企查查双随机抽查 | `mcp__qcc-operation__get_random_check` | 政府双随机抽查记录 |
+| 企查查资质证书 | `mcp__qcc-operation__get_qualifications` | ISO / CMMI / 行业资质 |
+| 企查查司法风险全量 | `mcp__qcc-risk__*`（30+ 工具）| 失信 / 被执行 / 限高 / 经营异常 / 破产 等 |
+| 企查查实控人画像 | `mcp__qcc-executive__*`（多工具）| 实控人个人司法风险 + 关联企业 |
+
+---
+
+**所有输出在用于业务决策之前，必须由具备相应资质的专业人员复核。**
+
+---
+
+**SKILL 版本**：v2.0（中文本土化版 + QCC MCP V2.0 升级）
+**适配 MCP 版本**：146 工具 / 6 服务器全量版
+**所需 Server**：qcc-company（必选）、qcc-risk（必选）、qcc-operation（强烈建议）、qcc-history（可选）、qcc-executive（可选）
